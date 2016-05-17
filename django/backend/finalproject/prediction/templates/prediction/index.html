@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Heatmaps</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+      #floating-panel {
+        position: absolute;
+        top: 10px;
+        left: 25%;
+        z-index: 5;
+        background-color: #fff;
+        padding: 5px;
+        border: 1px solid #999;
+        text-align: center;
+        font-family: 'Roboto','sans-serif';
+        line-height: 30px;
+        padding-left: 10px;
+      }
+      #floating-panel {
+        background-color: #fff;
+        border: 1px solid #999;
+        left: 25%;
+        padding: 5px;
+        position: absolute;
+        top: 10px;
+        z-index: 5;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="floating-panel">
+	  
+	  
+	  <button onclick="display_trump()">Donald Trump</button> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+	  <button onclick="display_cruz()">Ted Cruz</button>      &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+	  <button onclick="display_kasich()">John Kasich</button>  &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+	  <button onclick="display_clinton()">Hillary Clinton</button> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+	  <button onclick="display_sanders()">Bernie Sanders</button> <br>
+	  
+	  <button onclick="toggle_trump_pos()">pos</button> &nbsp 
+	  <button onclick="toggle_trump_nega()">nega</button> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+	  <button onclick="toggle_cruz_pos()">pos</button> &nbsp 
+	  <button onclick="toggle_cruz_nega()">nega</button> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+	  <button onclick="toggle_kasich_pos()">pos</button>
+	  <button onclick="toggle_kasich_nega()">nega</button> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp 
+	  <button onclick="toggle_clinton_pos()">pos</button> &nbsp 
+	  <button onclick="toggle_clinton_nega()">nega</button> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+	  <button onclick="toggle_sanders_pos()">pos</button> &nbsp &nbsp 
+	  <button onclick="toggle_sanders_nega()">nega</button> <br>
+	  
+	  
+	  
+	  &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+	  &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+	  &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+	  &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+	  &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+	  &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+	  <a href="/prediction/showstats">See Prediction Results</a>
+	  
+	  
+	  
+    </div>
+    <div id="map"></div>
+    <script>
+
+      // This example requires the Visualization library. Include the libraries=visualization
+      // parameter when you first load the API. For example:
+      // <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=visualization">
+
+      var map;
+      var heatmap_trump_pos, heatmap_trump_nega;
+	  var heatmap_cruz_pos, heatmap_cruz_nega;
+      var heatmap_kasich_pos, heatmap_kasich_nega;
+	  var heatmap_clinton_pos, heatmap_clinton_nega;
+	  var heatmap_sanders_pos, heatmap_sanders_nega;
+	  
+	 
+	  
+	  var trump_on = 0;
+	  var cruz_on = 0;
+	  var kasich_on = 0;
+	  var clinton_on = 0;
+	  var sanders_on = 0;
+	  
+	  var trump_pos_on = 0;
+	  var trump_nega_on = 0;
+	  var cruz_pos_on = 0;
+	  var cruz_nega_on = 0;
+	  var kasich_pos_on = 0;
+	  var kasich_nega_on = 0;
+	  var clinton_pos_on = 0;
+	  var clinton_nega_on = 0;
+	  var sanders_pos_on = 0;
+	  var sanders_nega_on = 0;
+	  
+	  
+	  
+	  var respond_result;
+	  
+	  var gradient_pos = [
+          'rgba(160, 255, 0, 0)',
+          'rgba(180, 200, 0, 0.9)',
+          'rgba(200, 150, 0, 1)',
+          'rgba(210, 100, 0, 1)',
+          'rgba(230, 50, 0, 1)',
+          'rgba(255, 0, 0, 1)',
+          'rgba(255, 0, 0, 1)',
+          'rgba(255, 0, 0, 1)',
+          'rgba(255, 0, 0, 1)',
+          'rgba(255, 0, 0, 1)',
+          'rgba(255, 0, 0, 1)',
+          'rgba(255, 0, 0, 1)',
+          'rgba(255, 0, 0, 1)',
+          'rgba(255, 0, 0, 1)'
+        ];
+	  
+	  
+	  
+	  
+	  
+	  var gradient_nega = [
+          'rgba(0, 255, 220, 0)',
+          'rgba(0, 255, 230, 1)',
+          'rgba(0, 191, 240, 1)',
+          'rgba(0, 127, 255, 1)',
+          'rgba(0, 63, 255, 1)',
+          'rgba(0, 0, 255, 1)',
+          'rgba(0, 0, 255, 1)',
+          'rgba(0, 0, 255, 1)',
+          'rgba(0, 0, 255, 1)',
+          'rgba(0, 0, 255, 1)',
+          'rgba(0, 0, 255, 1)',
+          'rgba(0, 0, 255, 1)',
+          'rgba(0, 0, 255, 1)',
+          'rgba(0, 0, 255, 1)'
+        ];
+		
+	  
+	  
+	  
+	  
+	  //Initial Google Map
+	  
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 5,
+          center: {lat: 40, lng: -100},
+          mapTypeId: google.maps.MapTypeId.SATELLITE
+        });		
+      }
+
+	  
+	  // ---------------------------------------------------------------------------------------
+	  //-------------------------------------Display heatmaps!----------------------------------
+	  //------------------------------------------------------------------------------------------
+	  
+	  
+	  function display_trump() {
+	    
+		httpGetSync("/prediction/" + "trump" + "/byname");
+		
+		if (trump_on == 1){
+		  heatmap_trump_pos.setMap(heatmap_trump_pos.getMap() ? null : null);
+          heatmap_trump_nega.setMap(heatmap_trump_nega.getMap() ? null : null);
+		}
+		
+		if (trump_on == 0){
+		
+		  heatmap_trump_pos = new google.maps.visualization.HeatmapLayer({
+            data: getPoints_pos(),
+            map: map
+          });
+		  heatmap_trump_pos.set('radius',50);
+		  heatmap_trump_pos.set('gradient',gradient_pos);
+		
+		  heatmap_trump_nega = new google.maps.visualization.HeatmapLayer({
+            data: getPoints_nega(),
+            map: map
+          });
+		  heatmap_trump_nega.set('gradient',gradient_nega);
+		  heatmap_trump_nega.set('radius',50);
+		}
+		
+		
+		trump_on = 1- trump_on;
+		
+		
+	  }
+	  
+	  function display_cruz() {
+	   
+	    httpGetSync("/prediction/" + "cruz" + "/byname");
+		
+		if (cruz_on == 1){
+		  heatmap_cruz_pos.setMap(heatmap_cruz_pos.getMap() ? null : null);
+          heatmap_cruz_nega.setMap(heatmap_cruz_nega.getMap() ? null : null);
+		}
+		
+		if (cruz_on == 0){
+		
+		  heatmap_cruz_pos = new google.maps.visualization.HeatmapLayer({
+            data: getPoints_pos(),
+            map: map
+          });
+		  heatmap_cruz_pos.set('radius',50);
+		  heatmap_cruz_pos.set('gradient',gradient_pos);
+		
+		  heatmap_cruz_nega = new google.maps.visualization.HeatmapLayer({
+            data: getPoints_nega(),
+            map: map
+          });
+		  heatmap_cruz_nega.set('gradient',gradient_nega);
+		  heatmap_cruz_nega.set('radius',50);
+		}
+		
+		cruz_on = 1- cruz_on;
+	  }
+	  
+	  function display_kasich() {
+	    httpGetSync("/prediction/" + "kasich" + "/byname");
+		
+		if (kasich_on == 1){
+		  heatmap_kasich_pos.setMap(heatmap_kasich_pos.getMap() ? null : null);
+          heatmap_kasich_nega.setMap(heatmap_kasich_nega.getMap() ? null : null);
+		}
+		
+		if (kasich_on == 0){
+		  heatmap_kasich_pos = new google.maps.visualization.HeatmapLayer({
+            data: getPoints_pos(),
+            map: map
+          });
+		  heatmap_kasich_pos.set('radius',50);
+		  heatmap_kasich_pos.set('gradient',gradient_pos);
+		
+		  heatmap_kasich_nega = new google.maps.visualization.HeatmapLayer({
+            data: getPoints_nega(),
+            map: map
+          });
+		  heatmap_kasich_nega.set('gradient',gradient_nega);
+		  heatmap_kasich_nega.set('radius',50);
+		}
+		
+		
+		kasich_on = 1- kasich_on;
+	  
+	  
+	  }
+	  
+	  
+	  function display_clinton() {
+	    httpGetSync("/prediction/" + "clinton" + "/byname");
+	
+		
+		if (clinton_on == 1){
+		  heatmap_clinton_pos.setMap(heatmap_clinton_pos.getMap() ? null : null);
+          heatmap_clinton_nega.setMap(heatmap_clinton_nega.getMap() ? null : null);
+		}
+		
+		if (clinton_on == 0){
+		
+		  heatmap_clinton_pos = new google.maps.visualization.HeatmapLayer({
+            data: getPoints_pos(),
+            map: map
+          });
+		  heatmap_clinton_pos.set('radius',50);
+		  heatmap_clinton_pos.set('gradient',gradient_pos);
+		  
+		  heatmap_clinton_nega = new google.maps.visualization.HeatmapLayer({
+            data: getPoints_nega(),
+            map: map
+          });
+		  heatmap_clinton_nega.set('gradient',gradient_nega);
+		  heatmap_clinton_nega.set('radius',50);
+		}
+		clinton_on = 1- clinton_on;
+	  }
+	  
+	  function display_sanders() {
+	    httpGetSync("/prediction/" + "sanders" + "/byname");
+		
+		if (sanders_on == 1){
+		  heatmap_sanders_pos.setMap(heatmap_sanders_pos.getMap() ? null : null);
+          heatmap_sanders_nega.setMap(heatmap_sanders_nega.getMap() ? null : null);
+		}
+		
+		if (sanders_on == 0){
+		
+		  heatmap_sanders_pos = new google.maps.visualization.HeatmapLayer({
+            data: getPoints_pos(),
+            map: map
+          });
+		  heatmap_sanders_pos.set('radius',50);
+		  heatmap_sanders_pos.set('gradient',gradient_pos);
+		
+		  heatmap_sanders_nega = new google.maps.visualization.HeatmapLayer({
+            data: getPoints_nega(),
+            map: map
+          });
+		  heatmap_sanders_nega.set('gradient',gradient_nega);
+		  heatmap_sanders_nega.set('radius',50);
+		}
+		
+		
+		sanders_on = 1- sanders_on;
+	  
+	  
+	  }
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+	 //--------------------------------------------------------------------------------------------------- 
+	 //-----------------------------getPoints !----------------------------------------------------
+	 //---------------------------------------------------------------------------------------
+	  
+	  
+	  
+	  function getPoints_pos() {
+		var data_pos = new Array();
+		if (respond_result.list)
+		{
+		  for (var i=0;i < (respond_result.list).length;i++)
+		  {
+		    if (((respond_result.list)[i]).senti_value > 0){
+		      data_pos.push({location: new google.maps.LatLng(((respond_result.list)[i]).lat,((respond_result.list)[i]).lng), weight:((respond_result.list)[i]).weight });
+		    }    
+		   }
+		}
+		return data_pos;
+      }
+	  
+	  
+	  function getPoints_nega() {
+        var data_nega = new Array();
+		if (respond_result.list){
+		    for (var i=0;i < (respond_result.list).length;i++)
+		    {
+		      if (((respond_result.list)[i]).senti_value < 0){
+		        data_nega.push({location: new google.maps.LatLng(((respond_result.list)[i]).lat,((respond_result.list)[i]).lng), weight:((respond_result.list)[i]).weight });
+		      }    
+		    }
+		return data_nega;
+		}
+      }
+	  
+    //----------------------------------------------------------------------------------------------------------
+	//---------------------------------------------HTTP REQUEST ------------------------------------------------------
+	//---------------------------------------------------------------------------------------------------
+	 
+	 
+	 
+	  function httpGetSync(theUrl)
+		{
+			var xmlHttp = new XMLHttpRequest();
+			xmlHttp.open("GET", theUrl, false);  
+			xmlHttp.send(null);
+			
+			if (xmlHttp.status === 200){
+			  respond_result = JSON.parse(xmlHttp.responseText)
+			
+			}
+			
+
+			
+		}
+
+		
+		
+		
+	/*	
+	  //---------------------------------------------------------------------------------
+	  //-----------------------------------CLEAR HEATMAPS-----------------------------
+	  function RemoveAll() {
+	    heatmap_trump_pos.setMap(heatmap_trump_pos.getMap() ? null : null);
+        heatmap_trump_nega.setMap(heatmap_trump_nega.getMap() ? null : null);
+		
+		heatmap_cruz_pos.setMap(heatmap_cruz_pos.getMap() ? null : null);
+        heatmap_cruz_nega.setMap(heatmap_cruz_nega.getMap() ? null : null);
+		
+		heatmap_kasich_pos.setMap(heatmap_kasich_pos.getMap() ? null : null);
+        heatmap_kasich_nega.setMap(heatmap_kasich_nega.getMap() ? null : null);
+		
+		heatmap_clinton_pos.setMap(heatmap_clinton_pos.getMap() ? null : null);
+        heatmap_clinton_nega.setMap(heatmap_clinton_nega.getMap() ? null : null);
+		
+		heatmap_sanders_pos.setMap(heatmap_sanders_pos.getMap() ? null : null);
+        heatmap_sanders_nega.setMap(heatmap_sanders_nega.getMap() ? null : null);
+	  }
+	  
+	  */
+	  
+	  //----------------------------------------------------------------------------------------------
+	  //----------------------------------Toggle a heatmap!-------------------------------------------
+	  //--------------------------------------------------------------------------------------------
+	  
+	  function toggle_trump_pos() {
+        heatmap_trump_pos.setMap(heatmap_trump_pos.getMap() ? null : map);
+      }
+	  
+	  function toggle_trump_nega() {
+        heatmap_trump_nega.setMap(heatmap_trump_nega.getMap() ? null : map);
+      }
+	  
+	  	
+	  function toggle_cruz_pos() {
+        heatmap_cruz_pos.setMap(heatmap_cruz_pos.getMap() ? null : map);
+      }
+	  
+	  function toggle_cruz_nega() {
+        heatmap_cruz_nega.setMap(heatmap_cruz_nega.getMap() ? null : map);
+      }
+	
+	  function toggle_kasich_pos() {
+        heatmap_kasich_pos.setMap(heatmap_kasich_pos.getMap() ? null : map);
+      }
+	  
+	  function toggle_kasich_nega() {
+        heatmap_kasich_nega.setMap(heatmap_kasich_nega.getMap() ? null : map);
+      }
+		
+	  function toggle_clinton_pos() {
+        heatmap_clinton_pos.setMap(heatmap_clinton_pos.getMap() ? null : map);
+      }
+	  
+	  function toggle_clinton_nega() {
+        heatmap_clinton_nega.setMap(heatmap_clinton_nega.getMap() ? null : map);
+      }
+      
+	  
+	  function toggle_sanders_pos() {
+        heatmap_sanders_pos.setMap(heatmap_sanders_pos.getMap() ? null : map);
+      }
+	  
+	  function toggle_sanders_nega() {
+        heatmap_sanders_nega.setMap(heatmap_sanders_nega.getMap() ? null : map);
+      }
+	  
+	  
+	  
+	
+	  
+    </script>
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC8C3N61p4rZnRjqp6BjVyQ-Q1GMI1CThg&libraries=visualization&callback=initMap">
+    </script>
+  </body>
+</html>
